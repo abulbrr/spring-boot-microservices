@@ -1,5 +1,7 @@
 package com.habbal.orderservice.service;
 
+import com.habbal.orderservice.client.InventoryClient;
+import com.habbal.orderservice.dto.InventoryResponse;
 import com.habbal.orderservice.dto.OrderLineItemsDto;
 import com.habbal.orderservice.dto.OrderRequest;
 import com.habbal.orderservice.model.Order;
@@ -9,7 +11,10 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -18,8 +23,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class OrderService {
-
     private final OrderRepository orderRepository;
+    private final InventoryClient inventoryClient;
+
     public void placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
@@ -27,6 +33,20 @@ public class OrderService {
                 .stream()
                 .map(this::mapToOrder)
                 .collect(Collectors.toList()));
+
+
+        List<String> skuCodes = order.getOrderLineItemsList().stream()
+                .map(OrderLineItems::getSkuCode)
+                .toList();
+
+        List<InventoryResponse> inventoryItems = inventoryClient.isInStock(skuCodes);
+        boolean productNotInStock = inventoryItems
+                .stream()
+                .anyMatch(inventoryResponse -> !inventoryResponse.isInStock());
+
+        if(CollectionUtils.isEmpty(inventoryItems) || productNotInStock) {
+            throw new NoSuchElementException("Product not found in inventory!");
+        }
 
         orderRepository.save(order);
         log.info("Order placed");

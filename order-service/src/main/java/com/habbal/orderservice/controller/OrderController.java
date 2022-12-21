@@ -1,5 +1,6 @@
 package com.habbal.orderservice.controller;
 
+import com.habbal.orderservice.client.InventoryClient;
 import com.habbal.orderservice.dto.OrderRequest;
 import com.habbal.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;

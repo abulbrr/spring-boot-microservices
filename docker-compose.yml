@@ -1,0 +1,42 @@
+version: '3'
+services:
+  postgres-order:
+    container_name: postgres-order
+    image: postgres
+    environment:
+      POSTGRES_DB: order-service
+      POSTGRES_USER: habbal
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+     - ./postgres-order:/data/postgres
+    expose:
+     - "5431"
+    ports:
+     - "5431:5431"
+    command: -p 5431
+    restart: unless-stopped
+  postgres-inventory:
+    container_name: postgres-inventory
+    image: postgres
+    environment:
+      POSTGRES_DB: inventory-service
+      POSTGRES_USER: habbal
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+     - ./postgres-inventory:/data/postgres
+    ports:
+     - "5432:5432"
+    restart: unless-stopped
+  mongo:
+    container_name: mongo
+    image: mongo:4.4.14-rc0-focal
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    volumes:
+      - ./mongo-data:/data/db
+

@@ -4,11 +4,13 @@ import com.habbal.orderservice.client.InventoryClient;
 import com.habbal.orderservice.dto.InventoryResponse;
 import com.habbal.orderservice.dto.OrderLineItemsDto;
 import com.habbal.orderservice.dto.OrderRequest;
+import com.habbal.orderservice.event.OrderPlacedEvent;
 import com.habbal.orderservice.model.Order;
 import com.habbal.orderservice.model.OrderLineItems;
 import com.habbal.orderservice.repository.OrderRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class OrderService {
     private final OrderRepository orderRepository;
     private final InventoryClient inventoryClient;
+    private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     public String placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
@@ -49,6 +52,7 @@ public class OrderService {
         }
 
         orderRepository.save(order);
+        kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
         log.info("Order placed");
         return "Order Placed Successfully";
     }
